@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'habit',
     'users',
+    'drf_yasg',
+    'django_filters',
 ]
 
 REST_FRAMEWORK = {
