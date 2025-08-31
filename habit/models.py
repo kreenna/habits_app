@@ -36,3 +36,18 @@ class Habit(models.Model):
     class Meta:
         verbose_name = "Привычка"
         verbose_name_plural = "Привычки"
+
+
+class Subscription(models.Model):
+    subscriber = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="subscriptions",
+                                   verbose_name="Подписчик")
+    habit = models.ForeignKey(Habit, on_delete=models.CASCADE, related_name="subscriptions", verbose_name="Привычка")
+    last_reminded = models.DateField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("subscriber", "habit")
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+
+    def __str__(self):
+        return f'{self.subscriber.email} подписан на привычку "{self.habit.action}"'

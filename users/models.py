@@ -9,6 +9,7 @@ class CustomUser(AbstractUser):
     phone_number = PhoneNumberField(verbose_name="Телефон")
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True, verbose_name="Аватар")
     country = models.CharField(max_length=200, verbose_name="Страна")
+    telegram_chat_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="ID чата")
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

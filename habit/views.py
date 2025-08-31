@@ -1,9 +1,11 @@
-from rest_framework import viewsets
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
-from habit.models import Habit
+from habit.models import Habit, Subscription
 from habit.paginators import HabitsPagination
-from habit.serializers import HabitSerializer
+from habit.serializers import HabitSerializer, SubscriptionSerializer
 from users.permissions import IsModerator, IsOwner
 
 
@@ -13,10 +15,10 @@ class HabitViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        # если пользователь - модератор, видит все курсы
+        # если пользователь - модератор, видит все привычки
         if user.groups.filter(name="managers").exists():
             return Habit.objects.all().order_by("id")
-        # если не модератор - видит только свои курсы (созданные самим пользователем)
+        # если не модератор - видит только свои привычки (созданные самим пользователем)
         return Habit.objects.filter(user=self.request.user).order_by("id")
 
     def perform_create(self, serializer):
@@ -42,3 +44,24 @@ class PublicHabitsViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return Habit.objects.filter(is_public=True).order_by("id")
+
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    serializer_class = SubscriptionSerializer
+
+    def get_queryset(self):
+        return Subscription.objects.filter(subscriber=self.request.user).order_by("id")
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        habit_id = request.data.get("habit")
+        habit_item = get_object_or_404(Habit, id=habit_id)
+
+        subs_item = Subscription.objects.filter(subscriber=user, habit=habit_item)
+
+        if subs_item.exists():
+            subs_item.delete()
+            return Response({"message": "подписка удалена"}, status=status.HTTP_200_OK)
+        else:
+            Subscription.objects.create(subscriber=user, habit=habit_item)
+            return Response({"message": "подписка добавлена"}, status=status.HTTP_201_CREATED)
