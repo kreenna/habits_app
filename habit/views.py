@@ -57,11 +57,5 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         habit_id = request.data.get("habit")
         habit_item = get_object_or_404(Habit, id=habit_id)
 
-        subs_item = Subscription.objects.filter(subscriber=user, habit=habit_item)
-
-        if subs_item.exists():
-            subs_item.delete()
-            return Response({"message": "подписка удалена"}, status=status.HTTP_200_OK)
-        else:
-            Subscription.objects.create(subscriber=user, habit=habit_item)
-            return Response({"message": "подписка добавлена"}, status=status.HTTP_201_CREATED)
+        Subscription.objects.create(subscriber=user, habit=habit_item)
+        return Response({"message": "подписка добавлена"}, status=status.HTTP_201_CREATED)
