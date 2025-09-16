@@ -22,7 +22,8 @@ class HabitViewSetTests(APITestCase):
         self.other_user = CustomUser.objects.create(email="non_owner@example.com", password="userpass")
 
         self.regular_user = CustomUser.objects.create(email="user@example.com", password="userpass")
-        self.user_habit = Habit.objects.create(user=self.regular_user, action="User action", time="10:00", place="Home")
+        self.user_habit = Habit.objects.create(user=self.regular_user, action="User action", time="10:00",
+                                               place="Home")
 
         # аутентификация клиентов
         self.client_mod = APIClient()
@@ -134,7 +135,6 @@ class SubscriptionViewSetTests(APITestCase):
         self.assertEqual(response.data["message"], "подписка добавлена")
         self.assertTrue(Subscription.objects.filter(subscriber=self.regular_user, habit=self.habit).exists())
 
-
     def test_subscription_list_shows_only_user(self):
         sub1 = Subscription.objects.create(subscriber=self.regular_user, habit=self.habit)
         other_habit = Habit.objects.create(user=self.other_user, action="Other habit", time="09:00", place="Park")
@@ -144,3 +144,4 @@ class SubscriptionViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], sub1.id)
+        sub2.delete()
