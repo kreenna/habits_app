@@ -93,10 +93,10 @@ jobs:
         run: echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
 
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/drf:${{ github.sha }} .
+        run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/habits_app:${{ github.sha }} .
 
       - name: Push Docker image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/drf:${{ github.sha }}
+        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/habits_app:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -111,8 +111,8 @@ jobs:
       - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/drf:${{ github.sha }}
-            sudo docker stop drf || true
-            sudo docker rm drf || true
-            sudo docker run -d --name drf -p 80:8000 ${{ secrets.DOCKER_HUB_USERNAME }}/drf:${{ github.sha }}
+            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/habits_app:${{ github.sha }}
+            sudo docker stop habits_app || true
+            sudo docker rm habits_app || true
+            sudo docker run -d --name habits_app -p 80:8000 ${{ secrets.DOCKER_HUB_USERNAME }}/habits_app:${{ github.sha }}
           EOF
