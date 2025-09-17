@@ -6,6 +6,24 @@
 
 ## Шаги для запуска проекта
 
+### 0. Подготовка удаленного сервера
+Подключитесь к серверу через SSH:
+```
+ssh your_user@your_server_ip
+```
+Обновите систему и установите необходимые пакеты:
+
+```
+sudo apt update && sudo apt upgrade -y
+sudo apt install git docker docker-compose -y
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+Добавьте пользователя в группу Docker (если необходимо):
+
+```
+sudo usermod -aG docker $USER
+```
 ### 1. Клонировать репозиторий
 ```
 git clone https://github.com/your_username/your_project.git
