@@ -1,3 +1,54 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
-# Create your models here.
+from config import settings
+
+
+class Habit(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="habits",
+                             verbose_name="Пользователь")
+    place = models.CharField(max_length=200, verbose_name="Место")
+    time = models.TimeField(verbose_name="Время")
+    action = models.TextField(verbose_name="Действие")
+    related_habit = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL)
+    frequency_days = models.PositiveSmallIntegerField(default=1, verbose_name="Периодичность")
+    reward = models.CharField(null=True, blank=True, max_length=200, verbose_name="Награда")
+    duration_seconds = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Продолжительность")
+    is_pleasant = models.BooleanField(default=False, verbose_name="Приятность")
+    is_public = models.BooleanField(default=False, verbose_name="Публичность")
+
+    def __str__(self):
+        return f"Я буду {self.action} в {self.time} в {self.place}"
+
+    def clean(self):
+        # исключить одновременное указание reward и related_habit
+        if self.reward and self.related_habit:
+            raise ValidationError("Не можете одновременно указать вознаграждение и связанную привычку.")
+        # у приятной привычки не может быть reward или related_habit
+        if self.is_pleasant and (self.reward or self.related_habit):
+            raise ValidationError("У приятной привычки не должно быть вознаграждения или связанной привычки.")
+        # ограничение времени выполнения
+        if self.duration_seconds > 120:
+            raise ValidationError("Время на выполнение не должно превышать 120 секунд.")
+        # frequency_days от 1 до 7
+        if not (1 <= self.frequency_days <= 7):
+            raise ValidationError("Периодичность должна быть от 1 до 7 дней.")
+
+    class Meta:
+        verbose_name = "Привычка"
+        verbose_name_plural = "Привычки"
+
+
+class Subscription(models.Model):
+    subscriber = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="subscriptions",
+                                   verbose_name="Подписчик")
+    habit = models.ForeignKey(Habit, on_delete=models.CASCADE, related_name="subscriptions", verbose_name="Привычка")
+    last_reminded = models.DateField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("subscriber", "habit")
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+
+    def __str__(self):
+        return f'{self.subscriber.email} подписан на привычку "{self.habit.action}"'

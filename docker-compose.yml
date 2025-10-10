@@ -1,0 +1,84 @@
+services:
+  backend:
+    container_name: backend
+    build: .
+    command: sh -c "python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --timeout 300 --workers $$(($$(nproc) * 2 + 1)) --log-level=debug"
+    ports:
+      - 8000:8000
+    restart: on-failure
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      - postbd
+      - redis
+    env_file:
+      - .env
+    volumes:
+      - ./staticfiles:/app/staticfiles  # Монтируем staticfiles
+      - ./staticfiles:/app/static       # И монтируем ту же папку как static
+      - media_volume:/app/media         # И этот для media файлов
+
+  postbd:
+    container_name: postbd
+    image: postgres:15-alpine
+    env_file: .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  celery:
+    container_name: celery
+    build: .
+    command: sh -c "celery -A config.celery worker --loglevel=INFO -B"
+    restart: on-failure
+    depends_on:
+      - postbd
+    env_file: ".env"
+    environment:
+      PG_DB_HOST: postbd
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+
+  celery-beat:
+    container_name: celery-beat
+    build: .
+    command: celery -A config beat --loglevel=INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - celery
+
+  redis:
+    container_name: redis
+    image: redis:7.4
+    restart: always
+    ports:
+      - "6379:6379"
+    env_file: ".env"
+    volumes:
+      - ./redis/data:/root/redis
+      - ./redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
+
+  nginx:
+    container_name: nginx
+    image: nginx:1.23.0-alpine
+    volumes:
+      - ./nginx/:/etc/nginx/conf.d/
+      - ./staticfiles:/app/staticfiles  # Правильный путь
+      - ./staticfiles:/app/static       # И для обратной совместимости
+      - media_volume:/app/media         # Монтируем media files в nginx
+    ports:
+      - 80:80
+      - 8080:8080
+    restart: on-failure
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+volumes:
+  static_volume:
+  media_volume:
+  postgres_data:
