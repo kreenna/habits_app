@@ -27,7 +27,7 @@ Backend-сервис для управления полезными и прия�
 
 ## Технологии
 
-- Python 3.x;
+- Python 3.13;
 - Django + Django REST Framework;
 - Celery + Redis (асинхронные задачи и планировщик);
 - PostgreSQL (база данных);
